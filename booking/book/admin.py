@@ -5,10 +5,10 @@ from book.models import Room, Booking
 
 class RoomAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None,               {'fields': ['capacity', 'number', 'status']}),
+        (None,               {'fields': ['capacity', 'number']}),
     ]
 
-    list_display = ('number', "capacity", 'status')
+    list_display = ('number', "capacity")
     search_fields = ['number']
 
 

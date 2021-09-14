@@ -1,12 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils.timezone import now
 
 
 class Room(models.Model):
 
     number = models.IntegerField(null=False)
-    status = models.BooleanField(default=False)
     capacity = models.IntegerField()
 
     def __str__(self):

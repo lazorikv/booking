@@ -41,7 +41,7 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = [
-            'pk', 'number', 'capacity', 'status', 'booking',
+            'pk', 'number', 'capacity', 'booking',
         ]
 
     def create(self, validated_data):
@@ -57,11 +57,13 @@ class RoomSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
 
+    booking = BookingDetailSerializer(source='booking_set', many=True, read_only=True)
+
     class Meta:
         model = User
 
         fields = [
-            'pk', 'username', 'first_name', 'last_name', 'email'
+            'pk', 'username', 'first_name', 'last_name', 'email', 'booking'
         ]
 
     def create(self, validated_data):
