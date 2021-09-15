@@ -4,11 +4,10 @@ from book.factories import UserFactory, RoomFactory
 
 class Command(BaseCommand):
 
-    help = 'Generate data'
+    help = "Generate data"
 
     def add_arguments(self, parser):
-        parser.add_argument('--amount', type=int,
-                            help='The amount of fake data')
+        parser.add_argument("--amount", type=int, help="The amount of fake data")
 
     def _generate_users(self, amount: int):
         for _ in range(amount):
@@ -16,6 +15,5 @@ class Command(BaseCommand):
             RoomFactory()
 
     def handle(self, *args, **options):
-        amount = options.get('amount', 10)
+        amount = options.get("amount", 10)
         self._generate_users(amount)
-
