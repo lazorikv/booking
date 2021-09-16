@@ -40,6 +40,7 @@ class RoomBookSerializer(serializers.ModelSerializer):
             "pk",
             "number",
             "capacity",
+            "type",
             "room_bookings",
         ]
 
@@ -60,6 +61,7 @@ class RoomSerializer(serializers.ModelSerializer):
             "pk",
             "number",
             "capacity",
+            "type",
             "room_bookings",
         ]
 
@@ -69,7 +71,7 @@ class RoomSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.number = validated_data.get("number", instance.number)
         instance.capacity = validated_data.get("capacity", instance.capacity)
-        instance.status = validated_data.get("status", instance.status)
+        instance.type = validated_data.get("type", instance.status)
         instance.save()
         return instance
 
@@ -84,7 +86,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["pk", "username", "first_name", "last_name", "email", "booking"]
+        fields = ["pk", "username", "first_name", "last_name", "email", "is_staff", "booking"]
 
     def create(self, validated_data):
         return User.objects.create(**validated_data)
@@ -93,5 +95,6 @@ class UserSerializer(serializers.ModelSerializer):
         instance.first_name = validated_data.get("first_name", instance.first_name)
         instance.last_name = validated_data.get("last_name", instance.last_name)
         instance.email = validated_data.get("email", instance.email)
+        instance.is_staff = validated_data.get("is_staff", instance.is_staff)
         instance.save()
         return instance

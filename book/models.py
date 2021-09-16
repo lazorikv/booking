@@ -2,10 +2,20 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+SML = "Small"
+BIG = "Big"
+
+ROOM_TYPES = (
+    (SML, "Small"),
+    (BIG, "Big")
+)
+
+
 class Room(models.Model):
 
-    number = models.IntegerField(null=False)
+    number = models.IntegerField(null=False, unique=True)
     capacity = models.IntegerField()
+    type = models.CharField(max_length=20, choices=ROOM_TYPES, default="Small")
 
     def __str__(self):
         return str(self.number)
