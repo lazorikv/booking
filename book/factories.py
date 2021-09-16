@@ -2,7 +2,7 @@ from factory.django import DjangoModelFactory
 from factory.faker import Faker
 import factory.fuzzy
 from factory import Sequence
-from book.models import Room, ROOM_TYPES, CustomUser as User, WORK_TYPES
+from book.models import Room, ROOM_TYPES, User as User, WORK_TYPES
 
 
 ROOM_CHOICES = [x[0] for x in ROOM_TYPES]

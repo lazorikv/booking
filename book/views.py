@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
 from django.utils import timezone
-from book.models import CustomUser as User
+from book.models import User
 from book.serializers import (
     RoomSerializer,
     UserSerializer,
@@ -15,6 +15,11 @@ from book.serializers import (
 )
 from book.models import Room, Booking
 from book.services import available_choice, room_status, HOURS_ADD
+
+
+user_roles = {"Manager": ["Big", ],
+              "Employee": ["Small", ]
+              }
 
 
 class RoomList(ModelViewSet):
@@ -44,11 +49,13 @@ class UserList(ModelViewSet):
         'user': openapi.Schema(type=openapi.TYPE_STRING, description='string'),
     }
 ))
+
+
 @api_view(("POST", "GET", "DELETE"))
 def booking_room(request):
     """Booking room"""
+    data = request.data
     if request.method == "POST":
-        data = request.data
         date_in = datetime.strptime(data["date_in"], "%Y-%m-%d %H:%M").replace(
             tzinfo=None
         )
@@ -98,13 +105,15 @@ def booking_room(request):
             return Response({"error_message": "No available rooms"})
 
     if request.method == "GET":
-        booking = Booking.objects.all()
+        user = User.objects.get(username="User-1")
+        user_permissions = user_roles[user.role]
+        rooms = Room.objects.filter(type__in=user_permissions)
+        booking = Booking.objects.filter(room__in=rooms)
         booking = list(booking)
         serializer = BookingSerializer(booking, many=True)
         return JsonResponse(serializer.data, safe=False, status=200)
 
     if request.method == "DELETE":
-        data = request.data
         user = User.objects.get(username=request.data['user'])
         if user.role == 'Manager':
             Booking.objects.filter(pk=data['id']).delete()

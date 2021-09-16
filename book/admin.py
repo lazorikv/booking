@@ -1,6 +1,6 @@
 from django.contrib import admin
 from book.models import Room, Booking
-from book.models import CustomUser
+from book.models import User
 
 
 class RoomAdmin(admin.ModelAdmin):
@@ -32,4 +32,4 @@ class BookingAdmin(admin.ModelAdmin):
 
 admin.site.register(Room, RoomAdmin)
 admin.site.register(Booking, BookingAdmin)
-admin.site.register(CustomUser, UserAdmin)
+admin.site.register(User, UserAdmin)
