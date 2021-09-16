@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
 from django.utils import timezone
-from django.contrib.auth.models import User
+from book.models import CustomUser as User
 from book.serializers import (
     RoomSerializer,
     UserSerializer,
@@ -75,7 +75,7 @@ def booking_room(request):
             user = User.objects.get(username=data["user"])
         except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
-        if user.is_staff:
+        if user.role == 'Manager':
             rooms = Room.objects.filter(capacity=data["capacity"])
         else:
             rooms = Room.objects.filter(capacity=data["capacity"]).filter(type='Small')
@@ -106,20 +106,18 @@ def booking_room(request):
     if request.method == "DELETE":
         data = request.data
         user = User.objects.get(username=request.data['user'])
-        if user.is_staff:
-            booking = Booking.objects.filter(pk=data['id']).delete()
+        if user.role == 'Manager':
+            Booking.objects.filter(pk=data['id']).delete()
         else:
             try:
                 booking = Booking.objects.get(pk=data['id'])
             except Booking.DoesNotExist:
                 return Response({"error_message": "Booking does not exist"}, 400)
             if str(booking.user) == user.username:
-                booking = Booking.objects.filter(pk=data['id']).delete()
+                Booking.objects.filter(pk=data['id']).delete()
             else:
                 return Response({"error_message": "Permission denied"}, 400)
-        if booking:
-            return Response({"error_message": "Booking is deleted"}, 204)
-        return Response({"message": "Booking was not deleted"}, 400)
+        return Response({"error_message": "Booking is deleted"}, 204)
 
 
 @api_view(("GET",))
