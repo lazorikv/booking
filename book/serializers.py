@@ -6,9 +6,9 @@ from book.services import HOURS_ADD
 
 
 class BookingSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Booking
-
         fields = ["pk", "room", "date_in", "date_out", "user"]
 
     def update(self, instance, validated_data):
@@ -21,9 +21,9 @@ class BookingSerializer(serializers.ModelSerializer):
 
 
 class BookingDetailSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Booking
-
         fields = ["pk", "room", "date_in", "date_out", "user"]
 
     def create(self, validated_data):
@@ -84,7 +84,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-
         fields = ["pk", "username", "first_name", "last_name", "email", "booking"]
 
     def create(self, validated_data):

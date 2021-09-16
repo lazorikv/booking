@@ -37,6 +37,12 @@ class UserList(ModelViewSet):
         'user': openapi.Schema(type=openapi.TYPE_STRING, description='string'),
     }
 ))
+@swagger_auto_schema(method='delete', request_body=openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='integer'),
+    }
+))
 @api_view(("POST", "GET", "DELETE"))
 def booking_room(request):
     """Booking room"""
@@ -54,33 +60,35 @@ def booking_room(request):
                 {
                     "data_in": "Еhe start time of the room reservation is less than the current time, "
                     "change the time of the reservation"
-                }
+                },
+                status=400
             )
         if date_in > date_out:
             return Response(
                 {
                     "data_out": "End of reservation time is less than the start of the reservation"
-                }
+                },
+                status=400
             )
 
         rooms = Room.objects.filter(capacity=data["capacity"])
-        free_rooms = []
+        free_room = ''
         for room in rooms:
             if available_choice(room.id, date_in, date_out):
-                free_rooms.append(room)
-        if free_rooms:
-            avail_room = free_rooms[0]
+                free_room = room
+                break
+        if free_room:
             try:
                 user = User.objects.get(username=data["user"])
             except User.DoesNotExist:
-                return Response({"error_message": "User does not exist"})
+                return Response({"error_message": "User does not exist"}, status=400)
             booking = Booking.objects.create(
-                room=avail_room, date_in=date_in, date_out=date_out, user=user
+                room=free_room, date_in=date_in, date_out=date_out, user=user
             )
             booker = Booking.objects.filter(pk=booking.pk)
             serializer = BookingSerializer(booker, many=True)
             booking.save()
-            return JsonResponse(serializer.data, safe=False)
+            return JsonResponse(serializer.data, safe=False, status=201)
 
         else:
             return Response({"error_message": "No available rooms"})
@@ -89,15 +97,14 @@ def booking_room(request):
         booking = Booking.objects.all()
         booking = list(booking)
         serializer = BookingSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=201)
+        return JsonResponse(serializer.data, safe=False, status=200)
 
     if request.method == "DELETE":
         data = request.data
-        booking = Booking.objects.filter(pk=data["pk"])
-        booking.save()
-        booking = list(booking)
-        serializer = BookingSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=201)
+        booking = Booking.objects.filter(pk=data['id']).delete()
+        if booking:
+            return Response({"error_message": "Booking room was not deleted"}, 400)
+        return Response({"message": "Booking is deleted"}, 204)
 
 
 @api_view(("GET",))

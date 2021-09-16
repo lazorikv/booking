@@ -7,7 +7,6 @@ HOURS_ADD = timedelta(hours=3)
 
 
 def available_choice(room, date_in, date_out):
-
     room_info = []
     room_bookings = Booking.objects.filter(room=room)
     for booking in room_bookings:
@@ -23,7 +22,6 @@ def available_choice(room, date_in, date_out):
 
 
 def room_status(room):
-
     time_now = timezone.now()
     bookings = Booking.objects.filter(room=room)
     free_room = []
