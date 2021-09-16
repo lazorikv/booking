@@ -1,12 +1,13 @@
 from factory.django import DjangoModelFactory
 from factory.faker import Faker
+import factory.fuzzy
 from factory import Sequence
 from django.contrib.auth.models import User
 from book.models import Room, ROOM_TYPES
-import factory.fuzzy
 
 
 ROOM_CHOICES = [x[0] for x in ROOM_TYPES]
+IS_STAFF = [True, False]
 
 
 class UserFactory(DjangoModelFactory):
@@ -15,6 +16,7 @@ class UserFactory(DjangoModelFactory):
     last_name = Faker("last_name")
     email = Faker("email")
     username = Sequence(lambda n: f"User-{n}")
+    is_staff = factory.fuzzy.FuzzyChoice(IS_STAFF)
 
     class Meta:
         model = User

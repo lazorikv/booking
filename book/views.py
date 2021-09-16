@@ -41,6 +41,7 @@ class UserList(ModelViewSet):
     type=openapi.TYPE_OBJECT,
     properties={
         'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='integer'),
+        'user': openapi.Schema(type=openapi.TYPE_STRING, description='string'),
     }
 ))
 @api_view(("POST", "GET", "DELETE"))
@@ -70,18 +71,21 @@ def booking_room(request):
                 },
                 status=400
             )
-
-        rooms = Room.objects.filter(capacity=data["capacity"])
+        try:
+            user = User.objects.get(username=data["user"])
+        except User.DoesNotExist:
+            return Response({"error_message": "User does not exist"}, status=400)
+        if user.is_staff:
+            rooms = Room.objects.filter(capacity=data["capacity"])
+        else:
+            rooms = Room.objects.filter(capacity=data["capacity"]).filter(type='Small')
         free_room = ''
         for room in rooms:
             if available_choice(room.id, date_in, date_out):
                 free_room = room
                 break
         if free_room:
-            try:
-                user = User.objects.get(username=data["user"])
-            except User.DoesNotExist:
-                return Response({"error_message": "User does not exist"}, status=400)
+
             booking = Booking.objects.create(
                 room=free_room, date_in=date_in, date_out=date_out, user=user
             )
@@ -101,10 +105,21 @@ def booking_room(request):
 
     if request.method == "DELETE":
         data = request.data
-        booking = Booking.objects.filter(pk=data['id']).delete()
+        user = User.objects.get(username=request.data['user'])
+        if user.is_staff:
+            booking = Booking.objects.filter(pk=data['id']).delete()
+        else:
+            try:
+                booking = Booking.objects.get(pk=data['id'])
+            except Booking.DoesNotExist:
+                return Response({"error_message": "Booking does not exist"}, 400)
+            if str(booking.user) == user.username:
+                booking = Booking.objects.filter(pk=data['id']).delete()
+            else:
+                return Response({"error_message": "Permission denied"}, 400)
         if booking:
-            return Response({"error_message": "Booking room was not deleted"}, 400)
-        return Response({"message": "Booking is deleted"}, 204)
+            return Response({"error_message": "Booking is deleted"}, 204)
+        return Response({"message": "Booking was not deleted"}, 400)
 
 
 @api_view(("GET",))
