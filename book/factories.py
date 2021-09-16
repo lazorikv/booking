@@ -2,7 +2,11 @@ from factory.django import DjangoModelFactory
 from factory.faker import Faker
 from factory import Sequence
 from django.contrib.auth.models import User
-from book.models import Room
+from book.models import Room, ROOM_TYPES
+import factory.fuzzy
+
+
+ROOM_CHOICES = [x[0] for x in ROOM_TYPES]
 
 
 class UserFactory(DjangoModelFactory):
@@ -21,6 +25,7 @@ class RoomFactory(DjangoModelFactory):
 
     number = Sequence(lambda n: n)
     capacity = Faker("pyint", min_value=2, max_value=5)
+    type = factory.fuzzy.FuzzyChoice(ROOM_CHOICES)
 
     class Meta:
         model = Room
