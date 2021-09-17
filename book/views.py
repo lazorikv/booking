@@ -18,9 +18,7 @@ from book.services import available_choice, room_status, HOURS_ADD
 
 
 user_roles = {
-    MNG: [
-        BIG, SML
-    ],
+    MNG: [BIG, SML],
     CWR: [
         SML,
     ],
@@ -95,7 +93,7 @@ def booking_room(request):
             return Response({"error_message": "User does not exist"}, status=400)
         rooms = []
         if user.role in FULL_ACCESS:
-            print('ALL')
+            print("ALL")
             rooms = Room.objects.filter(capacity=data["capacity"])
         elif user.role in LIMITED_ACCESS:
             rooms = Room.objects.filter(capacity=data["capacity"]).filter(type="Small")
@@ -119,19 +117,21 @@ def booking_room(request):
 
     if request.method == "GET":
         try:
-            user = User.objects.get(username=request.GET.get('user'))
+            user = User.objects.get(username=request.GET.get("user"))
         except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
         user_permissions = user_roles[user.role]
         rooms = Room.objects.filter(type__in=user_permissions)
         booking = Booking.objects.filter(room__in=rooms)
-        booking = list(booking)
-        serializer = BookingSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=200)
+        if booking:
+            booking = list(booking)
+            serializer = BookingSerializer(booking, many=True)
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return Response({"error_message": "No rooms booked"})
 
     if request.method == "DELETE":
         try:
-            user = User.objects.get(username=request.GET.get('user'))
+            user = User.objects.get(username=request.GET.get("user"))
         except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
         if user.role in FULL_ACCESS:
@@ -153,15 +153,17 @@ def free_rooms(request):
     """Free rooms"""
     if request.method == "GET":
         list_of_rooms = []
-        user = User.objects.get(username=request.GET.get('user'))
+        user = User.objects.get(username=request.GET.get("user"))
         user_permissions = user_roles[user.role]
         rooms = Room.objects.filter(type__in=user_permissions)
         for room in rooms:
             if all(room_status(room)):
                 list_of_rooms.append(room)
         booking = list_of_rooms
-        serializer = RoomBookSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=200)
+        if booking:
+            serializer = RoomBookSerializer(booking, many=True)
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return Response({"message": "All rooms is occupied now"}, 200)
 
 
 @api_view(("GET",))
@@ -169,15 +171,17 @@ def occupied_rooms(request):
     """Occupied rooms"""
     if request.method == "GET":
         list_of_rooms = []
-        user = User.objects.get(username=request.GET.get('user'))
+        user = User.objects.get(username=request.GET.get("user"))
         user_permissions = user_roles[user.role]
         rooms = Room.objects.filter(type__in=user_permissions)
         for room in rooms:
             if all(room_status(room)) is False:
                 list_of_rooms.append(room)
         booking = list_of_rooms
-        serializer = RoomBookSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=200)
+        if booking:
+            serializer = RoomBookSerializer(booking, many=True)
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return Response({"message": "All rooms is free now"}, 200)
 
 
 @api_view(("GET",))
@@ -185,10 +189,14 @@ def booked_rooms(request):
     """All booking in future"""
     if request.method == "GET":
         time_now = timezone.now()
-        user = User.objects.get(username=request.GET.get('user'))
+        user = User.objects.get(username=request.GET.get("user"))
         user_permissions = user_roles[user.role]
         rooms = Room.objects.filter(type__in=user_permissions)
-        booked_rooms = Booking.objects.filter(date_in__gt=time_now).filter(room__in=rooms)
+        booked_rooms = Booking.objects.filter(date_in__gt=time_now).filter(
+            room__in=rooms
+        )
         booking = list(booked_rooms)
-        serializer = BookingSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=200)
+        if booking:
+            serializer = BookingSerializer(booking, many=True)
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return Response({"message": "No booking for the future"}, 200)
