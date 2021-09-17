@@ -14,10 +14,10 @@ class RoomAdmin(admin.ModelAdmin):
 
 class UserAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None, {"fields": ["id", "username", "first_name", "last_name", "email", "role"]}),
+        (None, {"fields": ["username", "first_name", "last_name", 'password', "email", "role", 'is_active', "is_superuser", "is_staff"]}),
     ]
 
-    list_display = ("id", "username", "first_name", "last_name", "email", "role")
+    list_display = ("pk", "username", "first_name", "last_name", 'password', "email", "role")
     search_fields = ["username"]
 
 

@@ -3,7 +3,7 @@ from factory.faker import Faker
 import factory.fuzzy
 from factory import Sequence, LazyFunction
 from django.contrib.auth.hashers import make_password
-from book.models import Room, ROOM_TYPES, User as User, WORK_TYPES
+from book.models import *
 
 
 ROOM_CHOICES = [x[0] for x in ROOM_TYPES]

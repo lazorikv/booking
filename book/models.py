@@ -1,10 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User as OldUser
-from django.contrib.auth import get_user_model as user_model
+from django.contrib.auth.models import AbstractUser
 from book.management.managers import CustomUserManager
 
 
-USER_MOD = user_model()
 SML = "Small"
 BIG = "Big"
 CWR = "Employee"
@@ -24,7 +22,7 @@ FULL_ACCESS = (MNG, )
 LIMITED_ACCESS = (CWR, )
 
 
-class User(OldUser):
+class User(AbstractUser):
 
     role = models.CharField(max_length=20, choices=WORK_TYPES, default="Employee")
 
@@ -50,8 +48,8 @@ class Booking(models.Model):
     date_in = models.DateTimeField()
     date_out = models.DateTimeField()
     user = models.ForeignKey(
-        USER_MOD, verbose_name="custom_user", on_delete=models.CASCADE, null=True
+        User, verbose_name="booking_user", on_delete=models.CASCADE, null=True
     )
     room = models.ForeignKey(
-        Room, on_delete=models.CASCADE, verbose_name="room", null=True
+        Room, on_delete=models.CASCADE, verbose_name="booking_room", null=True
     )

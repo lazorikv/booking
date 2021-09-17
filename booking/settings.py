@@ -10,6 +10,7 @@ DEBUG = os.environ.get('DEBUG', default=True)
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split()
 
+AUTH_USER_MODEL = 'book.User'
 
 INSTALLED_APPS = [
     'book.apps.BookConfig',
