@@ -1,7 +1,8 @@
 from factory.django import DjangoModelFactory
 from factory.faker import Faker
 import factory.fuzzy
-from factory import Sequence
+from factory import Sequence, LazyFunction
+from django.contrib.auth.hashers import make_password
 from book.models import Room, ROOM_TYPES, User as User, WORK_TYPES
 
 
@@ -15,6 +16,7 @@ class UserFactory(DjangoModelFactory):
     last_name = Faker("last_name")
     email = Faker("email")
     username = Sequence(lambda n: f"User-{n}")
+    password = LazyFunction(lambda: make_password('pi3.1415'))
     role = factory.fuzzy.FuzzyChoice(ROLE_CHOICES)
 
     class Meta:
