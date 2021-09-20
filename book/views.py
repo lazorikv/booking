@@ -12,27 +12,20 @@ from book.serializers import (
     BookingSerializer,
     RoomBookSerializer,
 )
-from book import models
+from book.models import *
 from book.services import available_choice, room_status, HOURS_ADD
-
-
-user_roles = {
-    models.MNG: [models.BIG, models.SML],
-    models.CWR: [
-        models.SML,
-    ],
-}
+from booking.settings import *
 
 
 class RoomList(ModelViewSet):
 
     serializer_class = RoomSerializer
-    queryset = models.Room.objects.all()
+    queryset = Room.objects.all()
 
 
 class UserList(ModelViewSet):
     serializer_class = UserSerializer
-    queryset = models.User.objects.all()
+    queryset = User.objects.all()
 
 
 @swagger_auto_schema(
@@ -87,25 +80,20 @@ def booking_room(request):
                 status=400,
             )
         try:
-            user = models.User.objects.get(username=data["user"])
-        except models.User.DoesNotExist:
+            user = User.objects.get(username=data["user"])
+        except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
-        rooms = []
-        if user.role in models.FULL_ACCESS:
-            rooms = models.Room.objects.filter(capacity=data["capacity"])
-        elif user.role in models.LIMITED_ACCESS:
-            rooms = models.Room.objects.filter(capacity=data["capacity"]).filter(type="Small")
+        rooms = Room.objects.filter(capacity=data["capacity"]).exclude(accessibility=user.access)
         free_room = ""
         for room in rooms:
             if available_choice(room.id, date_in, date_out):
                 free_room = room
                 break
         if free_room:
-
-            booking = models.Booking.objects.create(
+            booking = Booking.objects.create(
                 room=free_room, date_in=date_in, date_out=date_out, user=user
             )
-            booker = models.Booking.objects.filter(pk=booking.pk)
+            booker = Booking.objects.filter(pk=booking.pk)
             serializer = BookingSerializer(booker, many=True)
             booking.save()
             return JsonResponse(serializer.data, safe=False, status=201)
@@ -115,12 +103,12 @@ def booking_room(request):
 
     if request.method == "GET":
         try:
-            user = models.User.objects.get(username=request.user)
-        except models.User.DoesNotExist:
+            user = User.objects.get(username=request.user)
+        except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
         user_permissions = user_roles[user.role]
-        rooms = models.Room.objects.filter(type__in=user_permissions)
-        booking = models.Booking.objects.filter(room__in=rooms)
+        rooms = Room.objects.filter(type__in=user_permissions)
+        booking = Booking.objects.filter(room__in=rooms)
         if booking:
             booking = list(booking)
             serializer = BookingSerializer(booking, many=True)
@@ -129,18 +117,18 @@ def booking_room(request):
 
     if request.method == "DELETE":
         try:
-            user = models.User.objects.get(username=request.user)
-        except models.User.DoesNotExist:
+            user = User.objects.get(username=request.user)
+        except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
-        if user.role in models.FULL_ACCESS:
-            models.Booking.objects.filter(pk=data["id"]).delete()
+        if user.role in FULL_ACCESS:
+            Booking.objects.filter(pk=data["id"]).delete()
         else:
             try:
-                booking = models.Booking.objects.get(pk=data["id"])
-            except models.Booking.DoesNotExist:
+                booking = Booking.objects.get(pk=data["id"])
+            except Booking.DoesNotExist:
                 return Response({"error_message": "Booking does not exist"}, 400)
             if str(booking.user) == user.username:
-                models.Booking.objects.filter(pk=data["id"]).delete()
+                Booking.objects.filter(pk=data["id"]).delete()
             else:
                 return Response({"error_message": "Permission denied"}, 400)
         return Response({"message": "Booking is deleted"}, 204)
@@ -153,9 +141,9 @@ def free_rooms(request):
         print("olsmdkfo;lsnad", request.user)
         print("osdfsadf", request.data)
         list_of_rooms = []
-        user = models.User.objects.get(username=request.user)
+        user = User.objects.get(username=request.user)
         user_permissions = user_roles[user.role]
-        rooms = models.Room.objects.filter(type__in=user_permissions)
+        rooms = Room.objects.filter(type__in=user_permissions)
         for room in rooms:
             if all(room_status(room)):
                 list_of_rooms.append(room)
@@ -171,9 +159,9 @@ def occupied_rooms(request):
     """Occupied rooms"""
     if request.method == "GET":
         list_of_rooms = []
-        user = models.User.objects.get(username=request.user)
+        user = User.objects.get(username=request.user)
         user_permissions = user_roles[user.role]
-        rooms = models.Room.objects.filter(type__in=user_permissions)
+        rooms = Room.objects.filter(type__in=user_permissions)
         for room in rooms:
             if all(room_status(room)) is False:
                 list_of_rooms.append(room)
@@ -189,10 +177,10 @@ def booked_rooms(request):
     """All booking in future"""
     if request.method == "GET":
         time_now = timezone.now()
-        user = models.User.objects.get(username=request.user)
+        user = User.objects.get(username=request.user)
         user_permissions = user_roles[user.role]
-        rooms = models.Room.objects.filter(type__in=user_permissions)
-        booked_rooms = models.Booking.objects.filter(date_in__gt=time_now).filter(
+        rooms = Room.objects.filter(type__in=user_permissions)
+        booked_rooms = Booking.objects.filter(date_in__gt=time_now).filter(
             room__in=rooms
         )
         booking = list(booked_rooms)

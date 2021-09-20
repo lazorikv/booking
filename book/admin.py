@@ -5,16 +5,16 @@ from book.models import User
 
 class RoomAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None, {"fields": ["capacity", "number"]}),
+        (None, {"fields": ["capacity", "number", "accessibility", "type"]}),
     ]
 
-    list_display = ("number", "capacity")
+    list_display = ("number", "capacity", "accessibility", "type")
     search_fields = ["number"]
 
 
 class UserAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None, {"fields": ["username", "first_name", "last_name", 'password', "email", "role", 'is_active', "is_superuser", "is_staff"]}),
+        (None, {"fields": ["username", "first_name", "last_name", 'password', "email", "role", "access"]}),
     ]
 
     list_display = ("pk", "username", "first_name", "last_name", 'password', "email", "role")
@@ -23,7 +23,7 @@ class UserAdmin(admin.ModelAdmin):
 
 class BookingAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None, {"fields": ["date_in", "date_out", "user", "room"]}),
+        (None, {"fields": ["date_in", "date_out", "user", "room", "accessibility"]}),
     ]
 
     list_display = ("date_in", "date_out", "user", "room")

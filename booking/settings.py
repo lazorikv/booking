@@ -122,3 +122,33 @@ REST_FRAMEWORK = {
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
+
+
+SMALL_ROOM = "Small"
+BIG_ROOM = "Big"
+EMPLOYEE = "Employee"
+MANAGER = "Manager"
+FULL_ACCESS = "Full_access"
+LIMITED_ACCESS = "Limited_access"
+
+ROOM_TYPES = [
+    (SMALL_ROOM, "Small"),
+    (BIG_ROOM, "Big")
+]
+
+WORK_TYPES = [
+    (EMPLOYEE, "Employee"),
+    (MANAGER, "Manager")
+]
+
+ACCESS_TYPES = [
+    (FULL_ACCESS, "Full_access"),
+    (LIMITED_ACCESS, "Limited_access")
+]
+
+user_roles = {
+    MANAGER: [BIG_ROOM, SMALL_ROOM],
+    EMPLOYEE: [
+        SMALL_ROOM,
+    ],
+}

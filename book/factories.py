@@ -8,6 +8,7 @@ from book.models import *
 
 ROOM_CHOICES = [x[0] for x in ROOM_TYPES]
 ROLE_CHOICES = [x[0] for x in WORK_TYPES]
+ACCESS_CHOICES = [x[0] for x in ACCESS_TYPES]
 
 
 class UserFactory(DjangoModelFactory):
@@ -17,6 +18,7 @@ class UserFactory(DjangoModelFactory):
     email = Faker("email")
     username = Sequence(lambda n: f"User-{n}")
     password = LazyFunction(lambda: make_password('pi3.1415'))
+    access = factory.fuzzy.FuzzyChoice(ACCESS_CHOICES)
     role = factory.fuzzy.FuzzyChoice(ROLE_CHOICES)
 
     class Meta:
@@ -28,6 +30,7 @@ class RoomFactory(DjangoModelFactory):
 
     number = Sequence(lambda n: n)
     capacity = Faker("pyint", min_value=2, max_value=5)
+    accessibility = factory.fuzzy.FuzzyChoice(ACCESS_CHOICES)
     type = factory.fuzzy.FuzzyChoice(ROOM_CHOICES)
 
     class Meta:

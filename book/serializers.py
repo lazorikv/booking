@@ -41,6 +41,7 @@ class RoomBookSerializer(serializers.ModelSerializer):
             "number",
             "capacity",
             "type",
+            "accessibility",
             "room_bookings",
         ]
 
@@ -62,6 +63,7 @@ class RoomSerializer(serializers.ModelSerializer):
             "number",
             "capacity",
             "type",
+            "accessibility",
             "room_bookings",
         ]
 
@@ -72,6 +74,7 @@ class RoomSerializer(serializers.ModelSerializer):
         instance.number = validated_data.get("number", instance.number)
         instance.capacity = validated_data.get("capacity", instance.capacity)
         instance.type = validated_data.get("type", instance.status)
+        instance.accessibility = validated_data.get("accessibility", instance.accessibility)
         instance.save()
         return instance
 
@@ -86,7 +89,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["pk", "username", "password", "first_name", "last_name", "email", "role", "booking"]
+        fields = ["pk", "username", "password", "first_name", "last_name", "email", "role", "access", "booking"]
 
     def create(self, validated_data):
         return User.objects.create(**validated_data)
