@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from book.factories import UserFactory, RoomFactory
+from book.factories import *
 
 
 class Command(BaseCommand):

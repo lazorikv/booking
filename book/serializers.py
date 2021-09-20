@@ -92,7 +92,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["pk", "username", "password", "first_name", "last_name", "email", "role", "access", "booking"]
 
     def create(self, validated_data):
-        return User.objects.create(**validated_data)
+        return User.objects.create_user(**validated_data)
 
     def update(self, instance, validated_data):
         instance.first_name = validated_data.get("first_name", instance.first_name)

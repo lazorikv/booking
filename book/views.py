@@ -38,7 +38,6 @@ class UserList(ModelViewSet):
             ),
             "date_in": openapi.Schema(type=openapi.TYPE_STRING, description="string"),
             "date_out": openapi.Schema(type=openapi.TYPE_STRING, description="string"),
-            "user": openapi.Schema(type=openapi.TYPE_STRING, description="string"),
         },
     ),
 )
@@ -72,18 +71,21 @@ def booking_room(request):
                 },
                 status=400,
             )
-        if date_in > date_out:
+        if date_in > date_out or date_in == date_out:
             return Response(
                 {
-                    "data_out": "End of reservation time is less than the start of the reservation"
+                    "data_out": "End of reservation time is less/equal than the start of the reservation"
                 },
                 status=400,
             )
         try:
-            user = User.objects.get(username=data["user"])
+            user = User.objects.get(username=request.user)
         except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
-        rooms = Room.objects.filter(capacity=data["capacity"]).exclude(accessibility=user.access)
+        if user.access == LIMITED_ACCESS:
+            rooms = Room.objects.filter(capacity=data["capacity"]).filter(accessibility=FULL_ACCESS)
+        else:
+            rooms = Room.objects.filter(capacity=data["capacity"])
         free_room = ""
         for room in rooms:
             if available_choice(room.id, date_in, date_out):
@@ -106,9 +108,11 @@ def booking_room(request):
             user = User.objects.get(username=request.user)
         except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
-        user_permissions = user_roles[user.role]
-        rooms = Room.objects.filter(type__in=user_permissions)
-        booking = Booking.objects.filter(room__in=rooms)
+        if user.access == FULL_ACCESS:
+            booking = Booking.objects.all()
+        else:
+            room = Room.objects.filter(accessibility=FULL_ACCESS)
+            booking = Booking.objects.filter(room__in=room)
         if booking:
             booking = list(booking)
             serializer = BookingSerializer(booking, many=True)
@@ -120,7 +124,7 @@ def booking_room(request):
             user = User.objects.get(username=request.user)
         except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
-        if user.role in FULL_ACCESS:
+        if user.role == MANAGER:
             Booking.objects.filter(pk=data["id"]).delete()
         else:
             try:
