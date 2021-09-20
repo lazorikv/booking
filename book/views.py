@@ -5,15 +5,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
-from django.utils import timezone
-from django.contrib.auth.models import User
-from book.serializers import (
-    RoomSerializer,
-    UserSerializer,
-    BookingSerializer,
-    RoomBookSerializer,
-)
-from book.models import Room, Booking
+from book.serializers import *
+from book.models import *
 from book.services import available_choice, room_status, HOURS_ADD
 
 
@@ -28,26 +21,34 @@ class UserList(ModelViewSet):
     queryset = User.objects.all()
 
 
-@swagger_auto_schema(method='post', request_body=openapi.Schema(
-    type=openapi.TYPE_OBJECT,
-    properties={
-        'capacity': openapi.Schema(type=openapi.TYPE_INTEGER, description='integer'),
-        'date_in': openapi.Schema(type=openapi.TYPE_STRING, description='string'),
-        'date_out': openapi.Schema(type=openapi.TYPE_STRING, description='string'),
-        'user': openapi.Schema(type=openapi.TYPE_STRING, description='string'),
-    }
-))
-@swagger_auto_schema(method='delete', request_body=openapi.Schema(
-    type=openapi.TYPE_OBJECT,
-    properties={
-        'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='integer'),
-    }
-))
+@swagger_auto_schema(
+    method="post",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "capacity": openapi.Schema(
+                type=openapi.TYPE_INTEGER, description="integer"
+            ),
+            "date_in": openapi.Schema(type=openapi.TYPE_STRING, description="string"),
+            "date_out": openapi.Schema(type=openapi.TYPE_STRING, description="string"),
+        },
+    ),
+)
+@swagger_auto_schema(
+    method="delete",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="integer"),
+            "user": openapi.Schema(type=openapi.TYPE_STRING, description="string"),
+        },
+    ),
+)
 @api_view(("POST", "GET", "DELETE"))
 def booking_room(request):
     """Booking room"""
+    data = request.data
     if request.method == "POST":
-        data = request.data
         date_in = datetime.strptime(data["date_in"], "%Y-%m-%d %H:%M").replace(
             tzinfo=None
         )
@@ -55,33 +56,35 @@ def booking_room(request):
             tzinfo=None
         )
 
-        if date_in < timezone.now().replace(tzinfo=None)+HOURS_ADD:
+        if date_in < timezone.now().replace(tzinfo=None) + HOURS_ADD:
             return Response(
                 {
                     "data_in": "Еhe start time of the room reservation is less than the current time, "
                     "change the time of the reservation"
                 },
-                status=400
+                status=400,
             )
-        if date_in > date_out:
+        if date_in > date_out or date_in == date_out:
             return Response(
                 {
-                    "data_out": "End of reservation time is less than the start of the reservation"
+                    "data_out": "End of reservation time is less/equal than the start of the reservation"
                 },
-                status=400
+                status=400,
             )
-
-        rooms = Room.objects.filter(capacity=data["capacity"])
-        free_room = ''
+        try:
+            user = User.objects.get(username=request.user)
+        except User.DoesNotExist:
+            return Response({"error_message": "User does not exist"}, status=400)
+        if user.access == LIMITED_ACCESS:
+            rooms = Room.objects.filter(capacity=data["capacity"]).filter(accessibility=FULL_ACCESS)
+        else:
+            rooms = Room.objects.filter(capacity=data["capacity"])
+        free_room = ""
         for room in rooms:
             if available_choice(room.id, date_in, date_out):
                 free_room = room
                 break
         if free_room:
-            try:
-                user = User.objects.get(username=data["user"])
-            except User.DoesNotExist:
-                return Response({"error_message": "User does not exist"}, status=400)
             booking = Booking.objects.create(
                 room=free_room, date_in=date_in, date_out=date_out, user=user
             )
@@ -94,16 +97,37 @@ def booking_room(request):
             return Response({"error_message": "No available rooms"})
 
     if request.method == "GET":
-        booking = Booking.objects.all()
-        booking = list(booking)
-        serializer = BookingSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=200)
+        try:
+            user = User.objects.get(username=request.user)
+        except User.DoesNotExist:
+            return Response({"error_message": "User does not exist"}, status=400)
+        if user.access == FULL_ACCESS:
+            booking = Booking.objects.all()
+        else:
+            room = Room.objects.filter(accessibility=FULL_ACCESS)
+            booking = Booking.objects.filter(room__in=room)
+        if booking:
+            booking = list(booking)
+            serializer = BookingSerializer(booking, many=True)
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return Response({"error_message": "No rooms booked"})
 
     if request.method == "DELETE":
-        data = request.data
-        booking = Booking.objects.filter(pk=data['id']).delete()
-        if booking:
-            return Response({"error_message": "Booking room was not deleted"}, 400)
+        try:
+            user = User.objects.get(username=request.user)
+        except User.DoesNotExist:
+            return Response({"error_message": "User does not exist"}, status=400)
+        if user.role == User.MANAGER:
+            Booking.objects.filter(pk=data["id"]).delete()
+        else:
+            try:
+                booking = Booking.objects.get(pk=data["id"])
+            except Booking.DoesNotExist:
+                return Response({"error_message": "Booking does not exist"}, 400)
+            if str(booking.user) == user.username:
+                Booking.objects.filter(pk=data["id"]).delete()
+            else:
+                return Response({"error_message": "Permission denied"}, 400)
         return Response({"message": "Booking is deleted"}, 204)
 
 
@@ -112,13 +136,19 @@ def free_rooms(request):
     """Free rooms"""
     if request.method == "GET":
         list_of_rooms = []
-        rooms = Room.objects.all()
+        user = User.objects.get(username=request.user)
+        if user.access == FULL_ACCESS:
+            rooms = Room.objects.all()
+        else:
+            rooms = Room.objects.filter(accessibility=FULL_ACCESS)
         for room in rooms:
             if all(room_status(room)):
                 list_of_rooms.append(room)
         booking = list_of_rooms
-        serializer = RoomBookSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=200)
+        if booking:
+            serializer = RoomBookSerializer(booking, many=True)
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return Response({"message": "All rooms is occupied now"}, 200)
 
 
 @api_view(("GET",))
@@ -126,13 +156,19 @@ def occupied_rooms(request):
     """Occupied rooms"""
     if request.method == "GET":
         list_of_rooms = []
-        rooms = Room.objects.all()
+        user = User.objects.get(username=request.user)
+        if user.access == FULL_ACCESS:
+            rooms = Room.objects.all()
+        else:
+            rooms = Room.objects.filter(accessibility=FULL_ACCESS)
         for room in rooms:
             if all(room_status(room)) is False:
                 list_of_rooms.append(room)
         booking = list_of_rooms
-        serializer = RoomBookSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=200)
+        if booking:
+            serializer = RoomBookSerializer(booking, many=True)
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return Response({"message": "All rooms is free now"}, 200)
 
 
 @api_view(("GET",))
@@ -140,7 +176,16 @@ def booked_rooms(request):
     """All booking in future"""
     if request.method == "GET":
         time_now = timezone.now()
-        booked_rooms = Booking.objects.filter(date_in__gt=time_now)
+        user = User.objects.get(username=request.user)
+        if user.access == FULL_ACCESS:
+            rooms = Room.objects.all()
+        else:
+            rooms = Room.objects.filter(accessibility=FULL_ACCESS)
+        booked_rooms = Booking.objects.filter(date_in__gt=time_now).filter(
+            room__in=rooms
+        )
         booking = list(booked_rooms)
-        serializer = BookingSerializer(booking, many=True)
-        return JsonResponse(serializer.data, safe=False, status=200)
+        if booking:
+            serializer = BookingSerializer(booking, many=True)
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return Response({"message": "No booking for the future"}, 200)

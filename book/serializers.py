@@ -1,7 +1,6 @@
-from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework import serializers
-from book.models import Room, Booking
+from book.models import *
 from book.services import HOURS_ADD
 
 
@@ -41,6 +40,7 @@ class RoomBookSerializer(serializers.ModelSerializer):
             "number",
             "capacity",
             "type",
+            "accessibility",
             "room_bookings",
         ]
 
@@ -62,6 +62,7 @@ class RoomSerializer(serializers.ModelSerializer):
             "number",
             "capacity",
             "type",
+            "accessibility",
             "room_bookings",
         ]
 
@@ -72,6 +73,7 @@ class RoomSerializer(serializers.ModelSerializer):
         instance.number = validated_data.get("number", instance.number)
         instance.capacity = validated_data.get("capacity", instance.capacity)
         instance.type = validated_data.get("type", instance.status)
+        instance.accessibility = validated_data.get("accessibility", instance.accessibility)
         instance.save()
         return instance
 
@@ -86,15 +88,15 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["pk", "username", "first_name", "last_name", "email", "is_staff", "booking"]
+        fields = ["pk", "username", "password", "first_name", "last_name", "email", "role", "access", "booking"]
 
     def create(self, validated_data):
-        return User.objects.create(**validated_data)
+        return User.objects.create_user(**validated_data)
 
     def update(self, instance, validated_data):
         instance.first_name = validated_data.get("first_name", instance.first_name)
         instance.last_name = validated_data.get("last_name", instance.last_name)
         instance.email = validated_data.get("email", instance.email)
-        instance.is_staff = validated_data.get("is_staff", instance.is_staff)
+        instance.role = validated_data.get("role", instance.is_staff)
         instance.save()
         return instance

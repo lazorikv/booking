@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf.urls import url, include
 from booking.yasg import urlpatterns as doc_url
-from book.views import RoomList, UserList, booking_room, free_rooms, occupied_rooms, booked_rooms
+from book.views import *
 
 
 router = DefaultRouter()
