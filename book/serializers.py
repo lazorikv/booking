@@ -1,8 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
-from book.models import Room, Booking
+from book.models import *
 from book.services import HOURS_ADD
-from book.models import User
 
 
 class BookingSerializer(serializers.ModelSerializer):

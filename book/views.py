@@ -5,16 +5,9 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
-from django.utils import timezone
-from book.serializers import (
-    RoomSerializer,
-    UserSerializer,
-    BookingSerializer,
-    RoomBookSerializer,
-)
+from book.serializers import *
 from book.models import *
 from book.services import available_choice, room_status, HOURS_ADD
-from booking.settings import *
 
 
 class RoomList(ModelViewSet):
@@ -124,7 +117,7 @@ def booking_room(request):
             user = User.objects.get(username=request.user)
         except User.DoesNotExist:
             return Response({"error_message": "User does not exist"}, status=400)
-        if user.role == MANAGER:
+        if user.role == User.MANAGER:
             Booking.objects.filter(pk=data["id"]).delete()
         else:
             try:
@@ -142,12 +135,12 @@ def booking_room(request):
 def free_rooms(request):
     """Free rooms"""
     if request.method == "GET":
-        print("olsmdkfo;lsnad", request.user)
-        print("osdfsadf", request.data)
         list_of_rooms = []
         user = User.objects.get(username=request.user)
-        user_permissions = user_roles[user.role]
-        rooms = Room.objects.filter(type__in=user_permissions)
+        if user.access == FULL_ACCESS:
+            rooms = Room.objects.all()
+        else:
+            rooms = Room.objects.filter(accessibility=FULL_ACCESS)
         for room in rooms:
             if all(room_status(room)):
                 list_of_rooms.append(room)
@@ -164,8 +157,10 @@ def occupied_rooms(request):
     if request.method == "GET":
         list_of_rooms = []
         user = User.objects.get(username=request.user)
-        user_permissions = user_roles[user.role]
-        rooms = Room.objects.filter(type__in=user_permissions)
+        if user.access == FULL_ACCESS:
+            rooms = Room.objects.all()
+        else:
+            rooms = Room.objects.filter(accessibility=FULL_ACCESS)
         for room in rooms:
             if all(room_status(room)) is False:
                 list_of_rooms.append(room)
@@ -182,8 +177,10 @@ def booked_rooms(request):
     if request.method == "GET":
         time_now = timezone.now()
         user = User.objects.get(username=request.user)
-        user_permissions = user_roles[user.role]
-        rooms = Room.objects.filter(type__in=user_permissions)
+        if user.access == FULL_ACCESS:
+            rooms = Room.objects.all()
+        else:
+            rooms = Room.objects.filter(accessibility=FULL_ACCESS)
         booked_rooms = Booking.objects.filter(date_in__gt=time_now).filter(
             room__in=rooms
         )

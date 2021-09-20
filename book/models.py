@@ -4,7 +4,24 @@ from book.management.managers import CustomUserManager
 from booking.settings import *
 
 
+FULL_ACCESS = "Full_access"
+LIMITED_ACCESS = "Limited_access"
+
+ACCESS_TYPES = [
+    (FULL_ACCESS, "Full_access"),
+    (LIMITED_ACCESS, "Limited_access")
+]
+
+
 class User(AbstractUser):
+
+    EMPLOYEE = "Employee"
+    MANAGER = "Manager"
+
+    WORK_TYPES = [
+        (EMPLOYEE, "Employee"),
+        (MANAGER, "Manager")
+    ]
 
     role = models.CharField(max_length=20, choices=WORK_TYPES, default="Employee")
     access = models.CharField(max_length=20, choices=ACCESS_TYPES, default="Limited_access")
@@ -16,6 +33,14 @@ class User(AbstractUser):
 
 
 class Room(models.Model):
+
+    SMALL_ROOM = "Small"
+    BIG_ROOM = "Big"
+
+    ROOM_TYPES = [
+        (SMALL_ROOM, "Small"),
+        (BIG_ROOM, "Big")
+    ]
 
     number = models.IntegerField(null=False, unique=True)
     accessibility = models.CharField(max_length=20, choices=ACCESS_TYPES, default="Limited_access")
